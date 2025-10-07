@@ -113,7 +113,7 @@ cd frontend
 npm install
 ```
 ### 3️⃣ Create an Environment File:
-Create a file named `.env` inside the `Backend/server` folder.
+Create a file named `.env` inside the `frontend` folder.
 
 Add the following values inside:
 ```env
