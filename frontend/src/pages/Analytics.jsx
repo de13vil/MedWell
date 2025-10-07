@@ -61,11 +61,11 @@ const AnalyticsPage = () => {
 
     if (!analyticsData) {
         return (
-            <div className="text-center bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-2xl p-12">
-                <BarChart className="mx-auto text-gray-500" size={48} />
-                <h3 className="mt-4 text-xl font-bold text-white">Not Enough Data</h3>
-                <p className="text-gray-400 mt-2">Log your first dose from the dashboard to generate analytics.</p>
-            </div>
+            <div className="panel-glass panel-hover p-12 text-center">
+                    <BarChart className="mx-auto text-gray-400" size={52} />
+                    <h3 className="mt-4 text-xl font-bold text-white">Not Enough Data</h3>
+                    <p className="text-gray-400 mt-2">Log your first dose from the dashboard to generate analytics.</p>
+                </div>
         );
     }
 
@@ -79,11 +79,15 @@ const AnalyticsPage = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <AdherenceChart data={analyticsData.weeklyAdherence} />
+                <div className="panel-glass panel-hover panel-inner-pad">
+                    <AdherenceChart data={analyticsData.weeklyAdherence} />
+                </div>
                 {analyticsData.missedByHour.length > 0 ? (
-                    <MissedByHourChart data={analyticsData.missedByHour} />
+                    <div className="panel-glass panel-hover panel-inner-pad">
+                        <MissedByHourChart data={analyticsData.missedByHour} />
+                    </div>
                 ) : (
-                    <div className="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex flex-col items-center justify-center">
+                    <div className="panel-glass panel-hover panel-inner-pad flex flex-col items-center justify-center">
                         <h3 className="text-white text-lg font-bold mb-4">Missed Doses by Time of Day</h3>
                         <p className="text-gray-400">No missed doses recorded yet. Keep up the great work!</p>
                     </div>

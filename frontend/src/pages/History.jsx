@@ -44,10 +44,10 @@ const HistoryPage = () => {
                     {logGroups.map(date => (
                         <div key={date}>
                              <h2 className="text-xl font-semibold text-purple-300 mb-4 sticky top-0 bg-gray-900/80 backdrop-blur-sm py-2 z-10">{date}</h2>
-                             <div className="bg-gray-800 rounded-2xl shadow-lg border border-gray-700">
+                             <div className="panel-glass">
                                 <div className="divide-y divide-gray-700">
                                     {logs[date].map(log => (
-                                        <div key={log.logId} className="flex items-center justify-between p-4 hover:bg-gray-700/50">
+                                        <div key={log.logId} className="flex items-center justify-between p-4 hover:bg-black/20 backdrop-blur-sm">
                                             <div className="flex items-center gap-4">
                                                 {log.status === 'Taken' ? <CheckCircle size={24} className="text-green-400"/> : <XCircle size={24} className="text-red-400"/>}
                                                 <div>
@@ -67,8 +67,8 @@ const HistoryPage = () => {
                     ))}
                 </div>
             ) : (
-                <div className="text-center bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-2xl p-12">
-                    <HistoryIcon size={48} className="mx-auto text-gray-600"/>
+                <div className="text-center panel-glass p-12 rounded-2xl">
+                    <HistoryIcon size={48} className="mx-auto text-gray-400"/>
                     <h3 className="mt-4 text-xl font-bold text-white">No History Yet</h3>
                     <p className="text-gray-400">Log your first dose from the dashboard to see your history here.</p>
                 </div>

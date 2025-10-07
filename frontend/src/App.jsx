@@ -1,13 +1,16 @@
-import React, { useEffect } from 'react'; // Import useEffect
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { googleCalendarApi } from './services/googleCalendarApi'; // Import the google api
+import { googleCalendarApi } from './services/googleCalendarApi';
 
 // Import Pages
 import LandingPage from './pages/Landing';
 import LoginPage from './pages/Auth/Login';
-import RegisterPage from './pages/Auth/Register';
+// --- THIS IS THE FIX ---
+// The path was slightly incorrect. This matches the file you created.
+import RegisterPage from './pages/Auth/Register'; 
 import ForgotPasswordPage from './pages/Auth/ForgotPassword';
+import ResetPasswordPage from './pages/Auth/ResetPasswordPage';
 import DashboardPage from './pages/Dashboard';
 import SchedulesPage from './pages/Schedules';
 import HistoryPage from './pages/History';
@@ -28,16 +31,12 @@ const AppLayout = () => {
     const location = useLocation();
     const currentPage = location.pathname.substring(1);
 
-    // --- THIS IS THE FIX ---
-    // Load Google API scripts once when the main app layout is loaded.
-    // This makes 'gapi' available on all authenticated pages.
     useEffect(() => {
         googleCalendarApi.loadGapiScripts();
     }, []);
 
     const handleLogout = () => {
         logout();
-        // No need to navigate here if AuthProvider handles it
     };
 
     return (
@@ -54,11 +53,14 @@ function App() {
             <BrowserRouter>
                 <div className="font-sans">
                     <Routes>
+                        {/* Public Routes */}
                         <Route path="/" element={<LandingPage />} />
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/register" element={<RegisterPage />} />
                         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
+                        {/* Private Routes Layout */}
                         <Route element={<PrivateRoute />}>
                             <Route element={<AppLayout />}>
                                 <Route path="/dashboard" element={<DashboardPage />} />

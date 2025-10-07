@@ -23,7 +23,7 @@ const Sidebar = ({ currentPage, isSidebarOpen, setSidebarOpen }) => { // Removed
         <motion.div
             variants={sidebarVariants}
             animate={isSidebarOpen ? "open" : "closed"}
-            className="bg-gray-900 text-gray-300 flex flex-col h-full border-r border-gray-700 relative"
+            className="flex flex-col h-full relative glass-card"
         >
             <div className="flex items-center justify-between p-4 h-16 border-b border-gray-700">
                 <AnimatePresence>
@@ -40,15 +40,15 @@ const Sidebar = ({ currentPage, isSidebarOpen, setSidebarOpen }) => { // Removed
                     )}
                 </AnimatePresence>
             </div>
-            <nav className="flex-1 px-2 py-4 space-y-2">
+            <nav className="flex-1 px-3 py-4 space-y-3">
                 {navItems.map(item => (
                     <a
                         key={item.name}
                         href="#"
                         // Updated onClick to use navigate with a URL path
                         onClick={(e) => { e.preventDefault(); navigate(`/${item.page}`); }}
-                        className={`flex items-center p-3 rounded-lg transition-colors duration-200 ${
-                            currentPage === item.page ? 'bg-purple-600 text-white' : 'hover:bg-gray-700 hover:text-white'
+                        className={`flex items-center p-3 rounded-lg transition-all duration-200 transform ${
+                            currentPage === item.page ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg' : 'hover:bg-gray-800 hover:text-white'
                         }`}
                         title={item.name}
                     >
@@ -70,7 +70,7 @@ const Sidebar = ({ currentPage, isSidebarOpen, setSidebarOpen }) => { // Removed
             </nav>
             <button
                 onClick={() => setSidebarOpen(!isSidebarOpen)}
-                className="absolute -right-4 top-16 bg-purple-600 text-white p-2 rounded-full shadow-lg focus:outline-none"
+                className="absolute -right-4 top-16 bg-gradient-to-r from-purple-600 to-pink-500 text-white p-2 rounded-full shadow-2xl focus:outline-none"
             >
                 {isSidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
             </button>

@@ -167,21 +167,20 @@ const SchedulesPage = () => {
             {loading ? <div className="text-center p-10">Loading Schedules...</div> : schedules.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {schedules.map(schedule => (
-                        <motion.div key={schedule._id} layout className="bg-gray-800 p-6 rounded-2xl flex flex-col justify-between border border-gray-700 hover:border-purple-500 transition-colors">
-                            <div>
+                        <motion.div key={schedule._id} layout className="panel-glass panel-hover flex flex-col justify-between">
+                            <div className="p-4">
                                 <h2 className="text-xl font-bold text-white mb-2">{schedule.name}</h2>
                                 <p className="text-purple-300 font-semibold">{schedule.dosage}</p>
                                 <div className="flex flex-wrap gap-2 mt-4">
                                     {schedule.times.map((time, index) => (
-                                        <span key={index} className="bg-gray-700 px-3 py-1 rounded-full text-sm">{dateUtils.formatTime(time)}</span>
+                                        <span key={index} className="bg-black/20 px-3 py-1 rounded-full text-sm">{dateUtils.formatTime(time)}</span>
                                     ))}
                                 </div>
                             </div>
-                            <div className="mt-6 pt-4 border-t border-gray-700 flex justify-between items-center text-sm">
+                            <div className="mt-6 pt-4 border-t border-gray-700 flex justify-between items-center text-sm p-4">
                                 <p className="text-gray-500">Start: {dateUtils.formatDate(schedule.startDate)}</p>
                                 <div className="flex gap-4">
                                     <button onClick={() => handleOpenEditModal(schedule)} className="flex items-center gap-1 text-blue-400 hover:text-blue-300"><Edit size={14}/> Edit</button>
-                                    {/* FIX: Use schedule._id */}
                                     <button onClick={() => handleDelete(schedule._id)} className="flex items-center gap-1 text-red-400 hover:text-red-300"><Trash2 size={14}/> Delete</button>
                                 </div>
                             </div>
@@ -189,7 +188,7 @@ const SchedulesPage = () => {
                     ))}
                 </div>
             ) : (
-                <div className="text-center bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-2xl p-12">
+                <div className="text-center panel-glass panel-hover p-12">
                     <Pill className="mx-auto text-gray-500" size={48} />
                     <h3 className="mt-4 text-xl font-bold text-white">No Schedules Found</h3>
                     <p className="text-gray-400 mt-2">Get started by adding your first medication.</p>
@@ -202,7 +201,7 @@ const SchedulesPage = () => {
             <AnimatePresence>
                 {isModalOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-                        <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="bg-gray-800 rounded-2xl p-8 w-full max-w-lg border border-gray-700">
+                        <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="panel-glass p-8 w-full max-w-lg">
                             <h2 className="text-2xl font-bold text-white mb-6">{editingSchedule ? 'Edit Medicine' : 'Add New Medicine'}</h2>
                             <ScheduleForm onSave={handleSave} onCancel={handleCancel} existingSchedule={editingSchedule} />
                         </motion.div>
@@ -213,7 +212,7 @@ const SchedulesPage = () => {
             <AnimatePresence>
                 {showDeleteConfirm && (
                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-                         <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="bg-gray-800 rounded-2xl p-8 w-full max-w-sm border border-gray-700 text-center">
+                         <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="panel-glass rounded-2xl p-8 w-full max-w-sm text-center">
                              <h3 className="text-lg font-bold text-white">Are you sure?</h3>
                              <p className="text-gray-400 my-4">This action will permanently delete the schedule. This cannot be undone.</p>
                              <div className="flex justify-center gap-4">

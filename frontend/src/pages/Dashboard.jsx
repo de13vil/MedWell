@@ -42,17 +42,56 @@ const DashboardPage = () => {
         notificationService.requestPermission();
     }, [fetchData]);
 
-    const handleLogDose = (dose, status) => {
+    const handleLogDose = async (dose, status) => {
+        console.debug('handleLogDose start', { dose, status });
+        // Optimistic UI update: remove the upcoming dose locally immediately
+        setSummary(prev => {
+            if (!prev) return prev;
+            const newUpcoming = prev.upcomingDoses.filter(u => !(u.scheduleId === dose.scheduleId && u.time === dose.time));
+            const newKpis = { ...(prev.kpis || {}) };
+            if (typeof newKpis.upcomingToday === 'number') {
+                newKpis.upcomingToday = Math.max(0, newKpis.upcomingToday - 1);
+            }
+            return { ...prev, upcomingDoses: newUpcoming, kpis: newKpis };
+        });
+
         const log = {
             scheduleId: dose.scheduleId,
             medicationName: dose.medicationName,
+            time: dose.time,
             scheduledTime: new Date(new Date().toDateString() + ' ' + dose.time).toISOString(),
             actionTime: new Date().toISOString(),
             status,
         };
-        medicineApi.createDoseLog(log).then(() => {
+
+        let createdLog = null;
+        try {
+            createdLog = await medicineApi.createDoseLog(log);
+            console.debug('createDoseLog response', createdLog);
+        } catch (error) {
+            console.error('Failed to create dose log:', error);
+            // Revert (or sync) by refetching authoritative data
             fetchData();
+            return;
+        }
+
+        // Update UI authoritatively using the server response
+        setSummary(prev => {
+            if (!prev) return prev;
+            // remove upcoming dose
+            const newUpcoming = prev.upcomingDoses.filter(u => !(u.scheduleId === dose.scheduleId && u.time === dose.time));
+            // prepend to recentActivity (use createdLog from server)
+            const newRecent = [createdLog, ...(prev.recentActivity || [])].slice(0, 5);
+            const newKpis = { ...(prev.kpis || {}) };
+            if (typeof newKpis.upcomingToday === 'number') {
+                newKpis.upcomingToday = Math.max(0, newKpis.upcomingToday - 1);
+            }
+            return { ...prev, upcomingDoses: newUpcoming, recentActivity: newRecent, kpis: newKpis };
         });
+
+        console.debug('UI updated, re-syncing with server');
+        // Re-sync with server to ensure any other derived values are correct
+        fetchData();
     };
 
     if (loading || !summary) return <div className="text-center p-10">Loading Dashboard...</div>;
@@ -75,20 +114,20 @@ const DashboardPage = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+                <div className="panel-glass panel-hover panel-inner-pad">
                     <h2 className="text-xl font-bold text-white mb-4">Upcoming Doses</h2>
                     {summary.upcomingDoses.length > 0 ? (
                         <div className="space-y-3">
                             {summary.upcomingDoses.map(dose => (
-                                <div key={`${dose.scheduleId}-${dose.time}`} className="bg-gray-700/50 p-3 rounded-lg flex justify-between items-center">
+                                <div key={`${dose.scheduleId}-${dose.time}`} className="bg-black/20 p-3 rounded-lg flex justify-between items-center backdrop-blur-sm">
                                     <div>
                                         <p className="font-semibold text-white">{dose.medicationName.split(' ')[0]}</p>
                                         <p className="text-sm text-gray-400">{dose.medicationName.split(' ').slice(1).join(' ')}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <p className="font-bold text-lg text-purple-400 mr-4">{dateUtils.formatTime(dose.time)}</p>
-                                        <button onClick={() => handleLogDose(dose, 'Skipped')} title="Skip Dose" className="p-2 bg-red-500/20 text-red-300 rounded-full hover:bg-red-500/40 transition-colors"><X size={16}/></button>
-                                        <button onClick={() => handleLogDose(dose, 'Taken')} title="Take Dose" className="p-2 bg-green-500/20 text-green-300 rounded-full hover:bg-green-500/40 transition-colors"><Check size={16}/></button>
+                                        <button type="button" onClick={(e) => { e.preventDefault(); handleLogDose(dose, 'Skipped'); }} title="Skip Dose" className="p-2 bg-red-500/20 text-red-300 rounded-full hover:bg-red-500/40 transition-colors"><X size={16}/></button>
+                                        <button type="button" onClick={(e) => { e.preventDefault(); handleLogDose(dose, 'Taken'); }} title="Take Dose" className="p-2 bg-green-500/20 text-green-300 rounded-full hover:bg-green-500/40 transition-colors"><Check size={16}/></button>
                                     </div>
                                 </div>
                             ))}
@@ -103,7 +142,7 @@ const DashboardPage = () => {
                     )}
                 </div>
 
-                <div className="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+                <div className="panel-glass panel-hover panel-inner-pad">
                     <h2 className="text-xl font-bold text-white mb-4">Recent Activity</h2>
                     {summary.recentActivity.length > 0 ? (
                          <ul className="space-y-3">

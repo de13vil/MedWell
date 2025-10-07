@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Pill, Clock, BookOpen, BarChart2, ChevronsRight, Calendar, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import FeatureCard from '../components/cards/FeatureCard';
+import FeatureCard from '../Components/cards/FeatureCard';
 
 // Contact Form Component
 const ContactForm = () => {
@@ -38,32 +38,32 @@ const ContactForm = () => {
     };
 
     return (
-        <div className="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 max-w-2xl mx-auto">
+        <div className="panel-glass p-8 rounded-3xl shadow-2xl max-w-2xl mx-auto">
             <h3 className="text-4xl font-bold mb-2 text-white">Get in Touch</h3>
             <p className="text-gray-400 mb-8">Have a question? Fill out the form below and we'll get back to you.</p>
             <form onSubmit={handleSubmit} className="space-y-4 text-left">
                 <div>
                     <label className="text-sm font-bold text-gray-300 block mb-2">Full Name</label>
-                    <input type="text" name="name" className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="e.g., Alex Doe" required />
+                    <input type="text" name="name" className="w-full bg-transparent border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus-accent" placeholder="e.g., Alex Doe" required />
                 </div>
                 <div>
                     <label className="text-sm font-bold text-gray-300 block mb-2">Email</label>
-                    <input type="email" name="email" className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="you@example.com" required />
+                    <input type="email" name="email" className="w-full bg-transparent border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus-accent" placeholder="you@example.com" required />
                 </div>
                 <div>
                     <label className="text-sm font-bold text-gray-300 block mb-2">Phone Number</label>
-                    <input type="tel" name="phone" className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="+91 XXXXX XXXXX" required />
+                    <input type="tel" name="phone" className="w-full bg-transparent border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus-accent" placeholder="+91 XXXXX XXXXX" required />
                 </div>
                 <div>
                     <label className="text-sm font-bold text-gray-300 block mb-2">Your Location</label>
-                    <input type="text" name="place" className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="e.g., New Delhi, India" required />
+                    <input type="text" name="place" className="w-full bg-transparent border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus-accent" placeholder="e.g., New Delhi, India" required />
                 </div>
                 <div>
                     <label className="text-sm font-bold text-gray-300 block mb-2">Your Query</label>
-                    <textarea name="message" rows="4" className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="How can we help you today?" required></textarea>
+                    <textarea name="message" rows="4" className="w-full bg-transparent border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus-accent" placeholder="How can we help you today?" required></textarea>
                 </div>
                 <div className="flex justify-end pt-2">
-                    <button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-lg transition-colors">Send Message</button>
+                    <button type="submit" className="btn-gradient text-white font-semibold py-3 px-8 rounded-full">Send Message</button>
                 </div>
                 {status && <p className="text-center text-sm text-gray-300 mt-4">{status}</p>}
             </form>
@@ -115,23 +115,23 @@ const LandingPage = () => {
 
                 <section id="features" className="py-20">
                     <h3 className="text-4xl font-bold mb-12">Why You'll Love MedWell</h3>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                       <FeatureCard icon={<Clock size={32} />} title="Powerful Reminders">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 feature-grid">
+                       <FeatureCard index={0} icon={<Clock size={32} />} title="Powerful Reminders">
                             Customizable alerts for every dose, ensuring you stay on track with your schedule.
                         </FeatureCard>
-                         <FeatureCard icon={<BookOpen size={32} />} title="Simple Logging">
+                         <FeatureCard index={1} icon={<BookOpen size={32} />} title="Simple Logging">
                             Log doses with a single tap. Keep a detailed history of taken and missed medications.
                         </FeatureCard>
-                         <FeatureCard icon={<BarChart2 size={32} />} title="Wellness Dashboard">
+                         <FeatureCard index={2} icon={<BarChart2 size={32} />} title="Wellness Dashboard">
                             Visualize your progress with insightful charts and track your health journey over time.
                         </FeatureCard>
-                        <FeatureCard icon={<ChevronsRight size={32} />} title="AI Predictions">
+                        <FeatureCard index={3} icon={<ChevronsRight size={32} />} title="AI Predictions">
                             Our smart system predicts potential adherence issues and helps you stay consistent.
                         </FeatureCard>
-                        <FeatureCard icon={<Calendar size={32} />} title="Calendar Sync">
+                        <FeatureCard index={4} icon={<Calendar size={32} />} title="Calendar Sync">
                             Integrate your medication schedule with your personal calendar for seamless planning.
                         </FeatureCard>
-                         <FeatureCard icon={<User size={32} />} title="Natural Language Assistant">
+                         <FeatureCard index={5} icon={<User size={32} />} title="Natural Language Assistant">
                             Ask our AI chatbot anything about your schedule, just like talking to a real person.
                         </FeatureCard>
                     </div>

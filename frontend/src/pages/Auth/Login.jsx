@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 const AuthPageLayout = ({ children, title, subtitle, page, linkText }) => {
     const navigate = useNavigate();
     return (
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+        <div className="min-h-screen flex items-center justify-center p-6">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -21,11 +21,11 @@ const AuthPageLayout = ({ children, title, subtitle, page, linkText }) => {
                     <h2 className="text-2xl font-bold text-white mt-4">{title}</h2>
                     <p className="text-gray-400">{subtitle}</p>
                 </div>
-                <div className="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+                <div className="p-8 rounded-3xl shadow-2xl glass-card border border-transparent">
                     {children}
                 </div>
                 <p className="text-center mt-6 text-gray-400">
-                    {page === '/login' ? "Don't have an account?" : "Already have an account?"}{' '}
+                    {page === '/login' ? "Already have an account?" : "Don't have an account?"}{' '}
                     <a href="#" onClick={(e) => { e.preventDefault(); navigate(page); }} className="text-purple-400 hover:underline font-semibold">
                         {linkText}
                     </a>
@@ -59,32 +59,32 @@ const LoginPage = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
                 {error && <p className="text-red-400 text-sm">{error}</p>}
                 <div>
-                    <label className="text-sm font-bold text-gray-300 block mb-2">Email</label>
-                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Enter your email" className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    <label className="text-sm font-semibold text-gray-300 block mb-2">Email</label>
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@company.com" className="w-full bg-transparent border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus-accent" />
                 </div>
                 <div>
-                    <label className="text-sm font-bold text-gray-300 block mb-2">Password</label>
+                    <label className="text-sm font-semibold text-gray-300 block mb-2">Password</label>
                     <div className="relative">
                         <input 
                             type={showPassword ? 'text' : 'password'} // Toggle input type
                             value={password} 
                             onChange={e => setPassword(e.target.value)} 
                             placeholder="Enter your password" 
-                            className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                            className="w-full bg-transparent border border-gray-700 rounded-xl p-3 pr-10 text-white focus:outline-none focus-accent" 
                         />
                         <button 
                             type="button" 
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-white"
+                            className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-300 hover:text-white"
                         >
                             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
                     </div>
                 </div>
                 <div className="text-right">
-                    <a href="#" onClick={e => {e.preventDefault(); navigate('/forgot-password')}} className="text-sm text-purple-400 hover:underline">Forgot Password?</a>
+                    <a href="#" onClick={e => {e.preventDefault(); navigate('/forgot-password')}} className="text-sm text-purple-300 hover:underline">Forgot Password?</a>
                 </div>
-                <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 transition-opacity">
+                <button type="submit" className="w-full btn-gradient text-white font-semibold py-3 px-4 rounded-xl focus:outline-none">
                     Login
                 </button>
             </form>

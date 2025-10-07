@@ -2,8 +2,8 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const AdherenceChart = ({ data }) => (
-    <div className="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-        <h3 className="text-white text-lg font-bold mb-4">Weekly Adherence</h3>
+    <div className="panel-glass panel-hover p-6 rounded-2xl">
+        <h3 className="text-lg font-bold text-white mb-4">Weekly Adherence</h3>
         <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#4A5568" />
