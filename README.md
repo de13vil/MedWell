@@ -112,6 +112,13 @@ cd frontend
 ```bash
 npm install
 ```
+### 3️⃣ Create an Environment File:
+Create a file named `.env` inside the `Backend/server` folder.
+
+Add the following values inside:
+```env
+VITE_GEMINI_API_KEY="your gemini api key"
+```
 
 ### 3️⃣ Start the Frontend Development Server:
 ```bash
