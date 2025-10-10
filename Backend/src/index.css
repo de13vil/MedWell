@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 280 30% 20%; /* Lighter Pinkish-Purple Background */
+    --foreground: 280 10% 98%;
+
+    --card: 280 30% 25%; /* Lighter Card Background */
+    --card-foreground: 280 10% 98%;
+ 
+    --popover: 280 30% 20%;
+    --popover-foreground: 280 10% 98%;
+ 
+    --primary: 280 10% 98%;
+    --primary-foreground: 280 80% 10%;
+ 
+    --secondary: 280 30% 30%;
+    --secondary-foreground: 280 10% 98%;
+ 
+    --muted: 280 30% 30%;
+    --muted-foreground: 280 10% 65%;
+ 
+    --accent: 300 90% 60%; 
+    --accent-foreground: 300 10% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 280 30% 30%;
+    --input: 280 30% 30%;
+    --ring: 300 90% 70%;
+ 
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Starfield Animation */
+@keyframes move-stars {
+  from { background-position: 0 0; }
+  to   { background-position: -10000px 5000px; }
+}
+
+.starfield {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  background: transparent;
+  background-image: 
+    radial-gradient(white, rgba(255,255,255,0) 2px),
+    radial-gradient(white, rgba(255,255,255,0) 1px);
+  background-size: 800px 800px, 400px 400px;
+  background-repeat: repeat;
+  animation: move-stars 200s linear infinite;
+}
