@@ -43,12 +43,25 @@ export const AuthProvider = ({ children }) => {
         return false;
     };
 
+    // Update local user profile data without changing auth state
+    const updateUser = (partialUser) => {
+        try {
+            const current = JSON.parse(localStorage.getItem('medwell_auth')) || { user: null, isAuthenticated: false, token: null };
+            const updatedUser = { ...(current.user || {}), ...(partialUser || {}) };
+            const newAuthData = { user: updatedUser, isAuthenticated: current.isAuthenticated, token: current.token };
+            localStorage.setItem('medwell_auth', JSON.stringify(newAuthData));
+            setAuthData(newAuthData);
+        } catch (e) {
+            console.error('Failed to update local user data', e);
+        }
+    };
+
     const logout = () => {
         localStorage.removeItem('medwell_auth');
         setAuthData({ user: null, isAuthenticated: false, token: null });
     };
 
-    const value = { ...authData, login, register, logout };
+    const value = { ...authData, login, register, logout, updateUser };
 
     return (
         <AuthContext.Provider value={value}>

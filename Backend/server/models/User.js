@@ -5,6 +5,14 @@ const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    mobile: { type: String },
+    place: { type: String },
+    timezone: { type: String, default: Intl.DateTimeFormat().resolvedOptions().timeZone },
+    notifications: {
+        remindersEnabled: { type: Boolean, default: true },
+        reminderLeadMinutes: { type: Number, default: 10 },
+    },
+    photo: { type: String }, // URL or relative path to avatar
 }, {
     timestamps: true,
 });

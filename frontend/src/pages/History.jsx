@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { medicineApi } from '../api/medicineApi';
-import { History as HistoryIcon, CheckCircle, XCircle } from 'lucide-react';
+import { History as HistoryIcon, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { dateUtils } from '../utils/dateUtils';
 
 const HistoryPage = () => {
@@ -49,20 +49,31 @@ const HistoryPage = () => {
                         <div className="space-y-12">
                             {logGroups.map(date => (
                                 <div key={date}>
-                                    <h2 className="text-2xl font-extrabold text-purple-200 mb-6 sticky top-0 bg-gray-900/80 backdrop-blur-sm py-3 z-10 rounded-xl shadow-inner px-4">{date}</h2>
+                                    <h2 className="text-2xl font-extrabold text-purple-200 mb-6 sticky top-0 bg-gray-900/80 backdrop-blur-sm py-3 z-10 rounded-xl shadow-inner px-4">
+                                        {date}
+                                        {new Date(date).toDateString() === new Date().toDateString() && (
+                                            <span className="ml-3 inline-block text-xs px-2 py-1 rounded-full bg-green-900/40 text-green-300 border border-green-700">Today</span>
+                                        )}
+                                    </h2>
                                     <div className="panel-glass bg-gradient-to-br from-purple-900/40 to-pink-900/30 border border-purple-900/30 shadow-2xl rounded-2xl">
                                         <div className="divide-y divide-purple-900/30">
                                             {logs[date].map(log => (
-                                                <div key={log.logId} className="flex items-center justify-between px-6 py-5 hover:bg-black/20 backdrop-blur-sm rounded-xl transition-all">
+                                                <div key={log.logId} className="flex items-center justify-between px-6 py-5 hover:bg.black/20 backdrop-blur-sm rounded-xl transition-all">
                                                     <div className="flex items-center gap-5">
-                                                        {log.status === 'Taken' ? <CheckCircle size={28} className="text-green-400"/> : <XCircle size={28} className="text-red-400"/>}
+                                                        {log.status === 'Taken' ? (
+                                                            <CheckCircle size={28} className="text-green-400" title="Taken"/>
+                                                        ) : log.status === 'Missed' ? (
+                                                            <AlertTriangle size={28} className="text-yellow-400" title="Missed"/>
+                                                        ) : (
+                                                            <XCircle size={28} className="text-red-400" title="Skipped"/>
+                                                        )}
                                                         <div>
-                                                            <p className="font-bold text-lg text-white">{log.medicationName}</p>
+                                                            <p className="font-bold text-lg text.white">{log.medicationName}</p>
                                                             <p className="text-base text-purple-200">Scheduled for {dateUtils.formatTime(new Date(log.scheduledTime).toTimeString().slice(0,5))}</p>
                                                         </div>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className={`font-bold text-base ${log.status === 'Taken' ? 'text-green-300' : 'text-red-300'}`}>{log.status}</p>
+                                                        <p className={`font-bold text-base ${log.status === 'Taken' ? 'text-green-300' : log.status === 'Missed' ? 'text-yellow-300' : 'text-red-300'}`}>{log.status}</p>
                                                         <p className="text-xs text-purple-200 font-mono mt-1">{new Date(log.actionTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                                                     </div>
                                                 </div>

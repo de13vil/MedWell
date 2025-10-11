@@ -17,6 +17,7 @@ router.get('/', protect, async (req, res) => {
 router.post('/', protect, async (req, res) => {
     try {
         const { scheduleId, medicationName, scheduledTime, actionTime, status } = req.body;
+        console.log('[DoseLog] Creating log:', { scheduleId, medicationName, scheduledTime, actionTime, status });
         const newLog = new DoseLog({
             user: req.user._id,
             scheduleId,
@@ -27,8 +28,10 @@ router.post('/', protect, async (req, res) => {
             status,
         });
         const createdLog = await newLog.save();
+        console.log('[DoseLog] Created:', createdLog);
         res.status(201).json(createdLog);
     } catch (error) {
+        console.error('[DoseLog] Error creating log:', error);
         res.status(500).json({ message: 'Server Error' });
     }
 });

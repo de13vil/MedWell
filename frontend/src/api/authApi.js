@@ -24,4 +24,22 @@ export const authApi = {
             return { success: false, message: error.response?.data?.message || "Registration failed" };
         }
     },
+
+    getProfile: async () => {
+        const response = await apiClient.get('/auth/me');
+        return response.data;
+    },
+
+    updateProfile: async (data) => {
+        const response = await apiClient.put('/auth/me', data);
+        return response.data;
+    },
+    uploadProfilePhoto: async (file) => {
+        const formData = new FormData();
+        // Backend expects field name 'photo'
+        formData.append('photo', file);
+        const response = await apiClient.post('/auth/me/photo', formData);
+        // Returns { photo, user }
+        return response.data;
+    },
 };

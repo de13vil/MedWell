@@ -26,50 +26,60 @@ router.get('/summary', protect, async (req, res) => {
             return diff <= minutes * 60 * 1000; // minutes -> ms
         };
 
-        const upcomingDoses = schedules.flatMap(s => 
-            s.times.map(time => {
-                const [hour, minute] = time.split(':').map(Number);
-                const doseTime = new Date(startOfToday);
-                doseTime.setHours(hour, minute, 0, 0);
+        // Define currentHHmm for logging and time comparison
+        const currentHHmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
 
-                if (doseTime <= now) return null; // only future doses
+        // Consider only schedules that start now or earlier (today or before)
+        const eligibleSchedules = schedules.filter(s => s.startDate <= now);
+    console.log('[Dashboard] Eligible schedules:', eligibleSchedules.map(s => ({id: s._id, name: s.name, startDate: s.startDate, times: s.times})));
 
-                // Check if there's already a DoseLog for this schedule and scheduledTime
-                const alreadyLogged = doseLogs.some(log => {
-                    // defensive checks
-                    if (!log.scheduleId) return false;
-                    try {
-                        const sameSchedule = log.scheduleId.toString() === s._id.toString();
-                        // Prefer exact match if the original schedule time string was stored
-                        if (log.time) {
-                            return sameSchedule && log.time === time;
-                        }
-                        // Fallback to time-window match on scheduledTime (old behavior)
-                        if (!log.scheduledTime) return false;
-                        const timeMatches = withinTolerance(log.scheduledTime, doseTime, 2);
-                        return sameSchedule && timeMatches;
-                    } catch (e) {
-                        return false;
-                    }
-                });
 
-                if (alreadyLogged) return null;
+    const upcomingDoses = eligibleSchedules.flatMap(s => 
+        s.times.map(time => {
+            const [hour, minute] = time.split(':').map(Number);
+            const doseTime = new Date(startOfToday);
+            doseTime.setHours(hour, minute, 0, 0);
+            console.log(`[Dashboard] Checking upcoming: schedule ${s.name} time ${time} vs currentHHmm ${currentHHmm}`);
 
-                return { scheduleId: s._id, medicationName: `${s.name} ${s.dosage}`, time };
-            }).filter(Boolean)
-        ).sort((a, b) => a.time.localeCompare(b.time));
+            if (doseTime <= now) return null; // only future doses
 
-        // 2. Get Recent Activity
-        const recentActivity = doseLogs.sort((a, b) => b.actionTime - a.actionTime).slice(0, 5);
+            return { scheduleId: s._id, medicationName: `${s.name} ${s.dosage}`, time };
+        }).filter(Boolean)
+    ).sort((a, b) => a.time.localeCompare(b.time));
+    console.log('[Dashboard] Upcoming doses:', upcomingDoses);
 
-        // 3. Calculate 7-day Adherence
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const weekLogs = doseLogs.filter(log => log.actionTime > sevenDaysAgo && (log.status === 'Taken' || log.status === 'Skipped'));
-        const takenInWeek = weekLogs.filter(l => l.status === 'Taken').length;
-        const adherenceWeekly = weekLogs.length > 0 ? Math.round((takenInWeek / weekLogs.length) * 100) : 0;
+        // Missed doses: scheduled today or earlier, time has passed, and not logged yet
 
-        // 4. Calculate Current Streak
+    const missedDoses = eligibleSchedules.flatMap(s =>
+        s.times.map(time => {
+            const [hour, minute] = time.split(':').map(Number);
+            const doseTime = new Date(startOfToday);
+            doseTime.setHours(hour, minute, 0, 0);
+            console.log(`[Dashboard] Checking missed: schedule ${s.name} time ${time} vs currentHHmm ${currentHHmm}`);  
+            if (doseTime > now) return null; // only past/now doses
+
+            return { scheduleId: s._id, medicationName: `${s.name} ${s.dosage}`, time };
+        }).filter(Boolean)
+    ).sort((a, b) => a.time.localeCompare(b.time));
+    console.log('[Dashboard] Missed doses:', missedDoses);
+
+
+        // 2. Get Recent Activity (include Missed)
+        const recentActivity = doseLogs
+            .filter(log => ['Taken', 'Skipped', 'Missed'].includes(log.status))
+            .sort((a, b) => b.actionTime - a.actionTime)
+            .slice(0, 5);
+
+
+    // 3. Calculate 7-day Adherence (include Missed)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const weekLogs = doseLogs.filter(log => log.actionTime > sevenDaysAgo && (log.status === 'Taken' || log.status === 'Skipped' || log.status === 'Missed'));
+    const takenInWeek = weekLogs.filter(l => l.status === 'Taken').length;
+    const adherenceWeekly = weekLogs.length > 0 ? Math.round((takenInWeek / weekLogs.length) * 100) : 0;
+
+
+        // 4. Calculate Current Streak (break on Missed or Skipped)
         let currentStreak = 0;
         for (let i = 0; i < 30; i++) {
             const date = new Date();
@@ -84,8 +94,9 @@ router.get('/summary', protect, async (req, res) => {
             
             const logsForDay = doseLogs.filter(log => log.actionTime >= dayStart && log.actionTime <= dayEnd);
             const takenLogsForDay = logsForDay.filter(l => l.status === 'Taken');
+            const missedOrSkipped = logsForDay.some(l => l.status === 'Missed' || l.status === 'Skipped');
             
-            if (totalDosesScheduled > 0 && takenLogsForDay.length >= totalDosesScheduled) {
+            if (totalDosesScheduled > 0 && takenLogsForDay.length >= totalDosesScheduled && !missedOrSkipped) {
                 currentStreak++;
             } else if (totalDosesScheduled > 0) {
                 break;
@@ -95,6 +106,7 @@ router.get('/summary', protect, async (req, res) => {
         res.json({
             kpis: { adherenceWeekly, currentStreak, upcomingToday: upcomingDoses.length },
             upcomingDoses,
+            missedDoses,
             recentActivity,
         });
 

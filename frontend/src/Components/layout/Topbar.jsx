@@ -21,7 +21,11 @@ const Topbar = ({ user, onLogout }) => (
             </button>
             <div className="flex items-center space-x-2">
                 <div className="h-9 w-9 rounded-full overflow-hidden bg-gradient-to-tr from-purple-600 to-pink-500 shadow-md flex items-center justify-center">
-                    <img className="h-full w-full object-cover" src={`https://api.dicebear.com/7.x/initials/svg?seed=${user?.name || 'User'}`} alt="User" />
+                    {user?.photo ? (
+                        <img className="h-full w-full object-cover" src={`${user.photo.startsWith('/uploads') ? user.photo : `/uploads${user.photo}`}`} alt="User" onError={(e)=>{e.target.onerror=null; e.target.src=`https://api.dicebear.com/7.x/initials/svg?seed=${user?.name || 'User'}`;}} />
+                    ) : (
+                        <img className="h-full w-full object-cover" src={`https://api.dicebear.com/7.x/initials/svg?seed=${user?.name || 'User'}`} alt="User" />
+                    )}
                 </div>
                 <div>
                      <span className="text-white font-medium">{user?.name}</span>

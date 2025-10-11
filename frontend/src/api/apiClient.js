@@ -5,9 +5,6 @@ const apiClient = axios.create({
   // The '/api' prefix is crucial. It matches the proxy setting in your vite.config.js.
   // All requests made with this instance will automatically go to http://localhost:5000/api/...
   baseURL: '/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // === Interceptor for adding the Auth Token to requests ===
@@ -25,6 +22,10 @@ apiClient.interceptors.request.use(
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+    }
+    // If sending FormData, allow browser to set proper multipart boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
     }
     return config;
   },
