@@ -241,8 +241,13 @@ router.put('/me', async (req, res) => {
         const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
         if (!token) return res.status(401).json({ message: 'Unauthorized' });
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // Allow all User model fields to be updated for full profile editability
+        const allowed = [
+            'name', 'mobile', 'place', 'timezone', 'notifications', 'photo', 'dateOfBirth', 'gender', 'bloodGroup',
+            'allergies', 'chronicConditions', 'medications', 'emergencyContact', 'doctor', 'address', 'insurance',
+            'height', 'weight', 'lifestyleNotes'
+        ];
         const updates = {};
-        const allowed = ['name','mobile','place','timezone','notifications'];
         allowed.forEach(k => {
             if (req.body[k] !== undefined) updates[k] = req.body[k];
         });

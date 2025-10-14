@@ -39,8 +39,8 @@ const AppLayout = () => {
     }, []);
 
     const handleLogout = () => {
-        logout();
         navigate('/', { replace: true });
+        setTimeout(() => logout(), 0);
     };
 
     return (
@@ -57,14 +57,14 @@ function App() {
             <BrowserRouter>
                 <div className="font-sans">
                     <Routes>
-                        {/* Public Routes */}
+                        {/* Public Routes - never wrapped by PrivateRoute */}
                         <Route path="/" element={<LandingPage />} />
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/register" element={<RegisterPage />} />
                         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-                        {/* Private Routes Layout */}
+                        {/* Private Routes Layout - only private pages inside */}
                         <Route element={<PrivateRoute />}>
                             <Route element={<AppLayout />}>
                                 <Route path="/dashboard" element={<DashboardPage />} />

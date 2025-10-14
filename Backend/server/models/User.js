@@ -13,6 +13,30 @@ const userSchema = new mongoose.Schema({
         reminderLeadMinutes: { type: Number, default: 10 },
     },
     photo: { type: String }, // URL or relative path to avatar
+    dateOfBirth: { type: Date },
+    gender: { type: String, enum: ['Male', 'Female', 'Other'] },
+    bloodGroup: { type: String },
+    allergies: { type: String },
+    chronicConditions: { type: String },
+    medications: { type: String },
+    emergencyContact: {
+        name: { type: String },
+        relation: { type: String },
+        phone: { type: String }
+    },
+    doctor: {
+        name: { type: String },
+        phone: { type: String },
+        email: { type: String }
+    },
+    address: { type: String },
+    insurance: {
+        provider: { type: String },
+        policyNumber: { type: String }
+    },
+    height: { type: String },
+    weight: { type: String },
+    lifestyleNotes: { type: String },
 }, {
     timestamps: true,
 });

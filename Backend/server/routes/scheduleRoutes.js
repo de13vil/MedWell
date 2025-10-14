@@ -17,13 +17,14 @@ router.get('/', protect, async (req, res) => {
 // POST /api/schedules - Add a new schedule
 router.post('/', protect, async (req, res) => {
     try {
-        const { name, dosage, times, startDate } = req.body;
+        const { name, dosage, times, startDate, googleEventIds } = req.body;
         const newSchedule = new Schedule({
             user: req.user._id,
             name,
             dosage,
             times,
             startDate,
+            googleEventIds: googleEventIds || [],
         });
         const createdSchedule = await newSchedule.save();
         res.status(201).json(createdSchedule);

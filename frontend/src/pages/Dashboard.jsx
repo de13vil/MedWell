@@ -164,8 +164,13 @@ const DashboardPage = () => {
         dose => !hiddenUpcoming.includes(doseKey(dose)) && !actedTodayKeys.has(doseKey(dose))
     );
 
-    // Missed doses are provided by backend (past due and not logged yet)
-    const missedDoses = summary?.missedDoses || [];
+    // Missed and Skipped doses: show all logs with status 'Missed' for today
+    const missedDoses = (doseLogsData || []).filter(
+        l => l.status === 'Missed' && l.actionTime && new Date(l.actionTime).toDateString() === new Date().toDateString()
+    );
+    const skippedDoses = (doseLogsData || []).filter(
+        l => l.status === 'Skipped' && l.actionTime && new Date(l.actionTime).toDateString() === new Date().toDateString()
+    );
 
     // Auto-log missed doses as "Missed" (once, with debug)
     const missedLoggedRef = useRef({});
@@ -291,6 +296,31 @@ const DashboardPage = () => {
                         ) : (
                             <div className="text-center py-6 text-gray-400">
                                 <p>No missed doses today. Keep it up!</p>
+                            </div>
+                        )}
+                    </motion.div>
+                    <motion.div
+                        className="panel-glass panel-hover panel-inner-pad shadow-2xl border border-pink-900/30 w-full"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.7, delay: 0.18 }}
+                    >
+                        <h2 className="text-2xl font-extrabold text-pink-300 mb-6 tracking-tight">Skipped Doses</h2>
+                        {skippedDoses.length > 0 ? (
+                            <ul className="space-y-4">
+                                {skippedDoses.map(dose => (
+                                    <li key={`${dose.scheduleId}-${dose.time}`} className="flex items-center justify-between text-base bg-pink-900/20 rounded-xl px-4 py-3">
+                                        <div>
+                                            <span className="font-semibold text-white">{dose.medicationName}</span>
+                                            <span className="ml-3 text-pink-400 font-mono">{dateUtils.formatTime(dose.time)}</span>
+                                        </div>
+                                        <span className="text-pink-400 font-bold">Skipped</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <div className="text-center py-6 text-gray-400">
+                                <p>No skipped doses today. Good job!</p>
                             </div>
                         )}
                     </motion.div>

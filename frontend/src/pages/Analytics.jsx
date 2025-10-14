@@ -16,36 +16,27 @@ const AnalyticsPage = () => {
                 const doseLogs = await medicineApi.getDoseLogs();
                 if (doseLogs && doseLogs.length > 0) {
                     const totalTaken = doseLogs.filter(l => l.status === 'Taken').length;
-                    const totalMissed = doseLogs.filter(l => l.status === 'Skipped').length;
-                    const totalLogs = totalTaken + totalMissed;
+                    const totalMissed = doseLogs.filter(l => l.status === 'Missed').length;
+                    const totalSkipped = doseLogs.filter(l => l.status === 'Skipped').length;
+                    const totalLogs = totalTaken + totalMissed + totalSkipped;
                     const overallAdherence = totalLogs > 0 ? Math.round((totalTaken / totalLogs) * 100) : 0;
 
                     const weeklyAdherence = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, dayIndex) => {
                         const dayLogs = doseLogs.filter(d => new Date(d.actionTime).getDay() === dayIndex);
                         const takenCount = dayLogs.filter(d => d.status === 'Taken').length;
-                        const totalCount = dayLogs.filter(d => d.status === 'Taken' || d.status === 'Skipped').length;
+                        const totalCount = dayLogs.filter(d => ['Taken','Skipped','Missed'].includes(d.status)).length;
                         if (totalCount === 0) return { name: day, adherence: 0 };
                         return { name: day, adherence: Math.round((takenCount / totalCount) * 100) };
                     });
 
-                    const missedByHour = [
-                        { hour: 'Morning (6-11am)', missed: 0 },
-                        { hour: 'Afternoon (12-5pm)', missed: 0 },
-                        { hour: 'Evening (6-11pm)', missed: 0 },
-                        { hour: 'Night (12-5am)', missed: 0 },
-                    ];
-                    doseLogs.filter(d => d.status === 'Skipped').forEach(d => {
-                        const hour = new Date(d.scheduledTime).getHours();
-                        if (hour >= 6 && hour < 12) missedByHour[0].missed++;
-                        else if (hour >= 12 && hour < 18) missedByHour[1].missed++;
-                        else if (hour >= 18 && hour < 24) missedByHour[2].missed++;
-                        else missedByHour[3].missed++;
-                    });
+                    // Missed Doses (today only)
+                    const todayStr = new Date().toISOString().slice(0, 10);
+                    const missedDosesToday = doseLogs.filter(d => d.status === 'Missed' && d.actionTime && new Date(d.actionTime).toISOString().slice(0, 10) === todayStr);
 
                     setAnalyticsData({
-                        stats: { overallAdherence, totalTaken, totalMissed },
+                        stats: { overallAdherence, totalTaken, totalMissed, totalSkipped },
                         weeklyAdherence,
-                        missedByHour: missedByHour.filter(m => m.missed > 0),
+                        missedDosesToday,
                     });
                 }
             } catch (error) {
@@ -54,7 +45,6 @@ const AnalyticsPage = () => {
                 setLoading(false);
             }
         };
-
         fetchData();
     }, []);
 
@@ -101,7 +91,7 @@ const AnalyticsPage = () => {
                     </h1>
 
                                 {/* Stat Cards */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
                                     <StatCard
                                         title="Overall Adherence"
                                         value={`${analyticsData.stats.overallAdherence}%`}
@@ -115,24 +105,23 @@ const AnalyticsPage = () => {
                                         color="bg-gradient-to-br from-green-500/30 to-blue-500/10 text-green-200 shadow-lg"
                                     />
                                     <StatCard
-                                        title="Total Doses Missed"
+                                        title="Total Missed Doses"
                                         value={`${analyticsData.stats.totalMissed}`}
                                         icon={<XCircle size={28} />}
                                         color="bg-gradient-to-br from-red-500/30 to-fuchsia-500/10 text-red-200 shadow-lg"
                                     />
+                                    <StatCard
+                                        title="Total Skipped Doses"
+                                        value={`${analyticsData.stats.totalSkipped}`}
+                                        icon={<XCircle size={28} />}
+                                        color="bg-gradient-to-br from-pink-500/30 to-fuchsia-500/10 text-pink-200 shadow-lg"
+                                    />
                                 </div>
 
+                                {/* ...existing code... */}
                                 {/* Charts Section - Full Width, Stacked */}
                                 <div className="flex flex-col gap-10 w-full">
                                     <AdherenceChart data={analyticsData.weeklyAdherence} />
-                                    {analyticsData.missedByHour.length > 0 ? (
-                                        <MissedByHourChart data={analyticsData.missedByHour} />
-                                    ) : (
-                                        <div className="panel-glass panel-hover panel-inner-pad shadow-2xl animate-fade-in-up flex flex-col items-center justify-center min-h-[260px] w-full">
-                                            <h3 className="text-white text-lg font-bold mb-4">Missed Doses by Time of Day</h3>
-                                            <p className="text-gray-300">No missed doses recorded yet. Keep up the great work!</p>
-                                        </div>
-                                    )}
                                 </div>
                 </div>
             </div>

@@ -111,26 +111,29 @@ const SchedulesPage = () => {
 
     const handleSave = async (formData) => {
         setIsModalOpen(false);
-        
-        if (editingSchedule && editingSchedule.googleEventIds) {
+
+        // If editing, delete old calendar events first
+        if (editingSchedule && editingSchedule.googleEventIds && editingSchedule.googleEventIds.length > 0) {
             await googleCalendarApi.deleteScheduleFromCalendar(editingSchedule.googleEventIds);
         }
 
-        const scheduleData = editingSchedule 
-            ? { ...editingSchedule, ...formData } 
-            : formData;
-            
+        // Save or update schedule in backend (without event IDs yet)
+        const scheduleData = editingSchedule
+            ? { ...editingSchedule, ...formData, googleEventIds: [] }
+            : { ...formData, googleEventIds: [] };
+
         const savedSchedule = editingSchedule
-            ? await medicineApi.updateSchedule(editingSchedule._id, scheduleData) // FIX: Use ._id here
+            ? await medicineApi.updateSchedule(editingSchedule._id, scheduleData)
             : await medicineApi.addSchedule(scheduleData);
-        
+
+        // Add new events to Google Calendar and get their IDs
         const newEventIds = await googleCalendarApi.addScheduleToCalendar(savedSchedule);
 
+        // Update backend with new event IDs
         if (newEventIds && newEventIds.length > 0) {
-            // FIX: Use savedSchedule._id here for newly created schedules
             await medicineApi.updateSchedule(savedSchedule._id, { ...savedSchedule, googleEventIds: newEventIds });
         }
-        
+
         setEditingSchedule(null);
         fetchData();
     };
@@ -138,11 +141,19 @@ const SchedulesPage = () => {
     const confirmDelete = async () => {
         if (showDeleteConfirm) {
             const scheduleToDelete = schedules.find(s => s._id === showDeleteConfirm);
-            
-            if (scheduleToDelete && scheduleToDelete.googleEventIds) {
-                await googleCalendarApi.deleteScheduleFromCalendar(scheduleToDelete.googleEventIds);
+
+            if (scheduleToDelete && scheduleToDelete.googleEventIds && scheduleToDelete.googleEventIds.length > 0) {
+                console.log('Attempting to delete Google Calendar events:', scheduleToDelete.googleEventIds);
+                try {
+                    await googleCalendarApi.deleteScheduleFromCalendar(scheduleToDelete.googleEventIds);
+                } catch (err) {
+                    console.error('Failed to delete Google Calendar events:', err);
+                    alert('Failed to delete Google Calendar events. Please check your Google connection.');
+                }
+            } else {
+                console.warn('No googleEventIds found for this schedule:', scheduleToDelete);
             }
-            
+
             await medicineApi.deleteSchedule(showDeleteConfirm);
 
             setShowDeleteConfirm(null);
