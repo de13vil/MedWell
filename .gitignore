@@ -1,0 +1,5 @@
+# Ignore environment files
+.env
+Backend/server/.env
+# Ignore uploads directory
+Backend/server/uploads/
