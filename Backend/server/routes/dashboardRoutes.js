@@ -8,93 +8,119 @@ const { protect } = require('../middleware/authMiddleware');
 router.get('/summary', protect, async (req, res) => {
 
     try {
-        const userId = req.user._id;
-    // Always use local time for today
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        const { _id: userId, timezone = 'UTC' } = req.user;
+        const { DateTime } = require('luxon');
+        // Use user's timezone for all calculations
+        const now = DateTime.now().setZone(timezone);
+        const today = now.startOf('day');
+        const startOfToday = today;
         // Get active schedules and all dose logs in parallel for efficiency
         const [schedules, doseLogs] = await Promise.all([
             Schedule.find({ user: userId, isActive: true }),
             DoseLog.find({ user: userId })
         ]);
-        // Use local time for all calculations
+        // Use user's timezone for all calculations
         const eligibleSchedules = schedules.filter(s => {
-            const schedDate = new Date(s.startDate);
-            schedDate.setHours(0, 0, 0, 0);
+            const schedDate = DateTime.fromJSDate(s.startDate).setZone(timezone).startOf('day');
             return schedDate <= startOfToday;
         });
-        const currentHHmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        const currentHHmm = now.toFormat('HH:mm');
         // Debug: Log eligible schedules and dose logs for today
         console.log('--- DEBUG: Dashboard Summary ---');
         console.log('Eligible schedules:', eligibleSchedules.map(s => ({id: s._id, name: s.name, times: s.times, startDate: s.startDate})));
         console.log('Dose logs for user:', doseLogs.map(l => ({scheduleId: l.scheduleId, time: l.time, status: l.status, actionTime: l.actionTime})));
 
-        // 1. Calculate Upcoming Doses (exclude ones already logged)
-        const withinTolerance = (d1, d2, minutes = 2) => {
-            const diff = Math.abs(new Date(d1).getTime() - new Date(d2).getTime());
-            return diff <= minutes * 60 * 1000; // minutes -> ms
-        };
-
-        const upcomingDoses = eligibleSchedules.flatMap(s => 
-            s.times.map(time => {
-                const [hour, minute] = time.split(':').map(Number);
-                const doseTime = new Date(startOfToday);
-                doseTime.setHours(hour, minute, 0, 0);
-                console.log(`[Dashboard] Checking upcoming: schedule ${s.name} time ${time} vs currentHHmm ${currentHHmm}`);
-
-                if (doseTime <= now) return null; // only future doses
-
-                return { scheduleId: s._id, medicationName: `${s.name} ${s.dosage}`, time };
-            }).filter(Boolean)
-        ).sort((a, b) => a.time.localeCompare(b.time));
-        console.log('[Dashboard] Upcoming doses:', upcomingDoses);
-
-        // Missed doses: scheduled today or earlier, time has passed, and not logged as Taken, Skipped, or Missed for today
         // Helper to zero-pad times for robust comparison
         const padTime = t => {
             if (!t) return '';
             const [h, m] = t.split(':');
             return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
         };
-        const missedDoses = eligibleSchedules.flatMap(s =>
-            s.times.map(time => {
-                const [hour, minute] = time.split(':').map(Number);
-                const doseTime = new Date(startOfToday);
-                doseTime.setHours(hour, minute, 0, 0);
-                if (doseTime > now) return null; // only past/now doses
 
-                // Check if this dose was logged as Taken, Skipped, or Missed (robust to time formatting)
+        // 1. Calculate Upcoming Doses (future doses for today, not yet logged)
+        const upcomingDoses = eligibleSchedules.flatMap(s => {
+            const schedStart = DateTime.fromJSDate(s.startDate).setZone(timezone).startOf('day');
+            const days = Math.max(0, today.diff(schedStart, 'days').days);
+            let upcoming = [];
+            // Only today, only times after now
+            for (const time of s.times) {
+                const [hour, minute] = time.split(':').map(Number);
+                const doseTime = today.set({ hour, minute, second: 0, millisecond: 0 });
+                if (doseTime <= now) continue;
+                // Exclude if already logged as Taken, Skipped, or Missed for today
                 const wasLogged = doseLogs.some(log => {
-                    const match = String(log.scheduleId) === String(s._id) &&
+                    const logTime = DateTime.fromISO(log.actionTime, { zone: timezone });
+                    return String(log.scheduleId) === String(s._id) &&
                         padTime(log.time) === padTime(time) &&
                         ['Taken', 'Skipped', 'Missed'].includes(log.status) &&
-                        new Date(log.actionTime).toDateString() === now.toDateString();
-                    if (match) {
-                        console.log(`[DEBUG] Dose at ${padTime(time)} for schedule ${s.name} already logged as ${log.status} at ${log.actionTime}`);
-                    }
-                    return match;
+                        logTime.toFormat('yyyy-MM-dd') === today.toFormat('yyyy-MM-dd');
                 });
-                if (wasLogged) return null;
-
-                // Not taken, not skipped, not already marked missed
-                console.log(`[DEBUG] Missed dose detected: schedule ${s.name}, time ${padTime(time)}`);
-                return { scheduleId: s._id, medicationName: `${s.name} ${s.dosage}`, time: padTime(time) };
-            }).filter(Boolean)
-        ).sort((a, b) => a.time.localeCompare(b.time));
-
-        // Skipped doses: doses logged as Skipped today
-        const skippedDoses = doseLogs.filter(log => {
-            const logDate = new Date(log.actionTime);
-            return log.status === 'Skipped' &&
-                logDate.getFullYear() === now.getFullYear() &&
-                logDate.getMonth() === now.getMonth() &&
-                logDate.getDate() === now.getDate();
-        }).map(log => ({
-            scheduleId: log.scheduleId,
-            medicationName: log.medicationName,
-            time: log.time
-        }));
+                if (wasLogged) continue;
+                upcoming.push({ scheduleId: s._id, medicationName: `${s.name} ${s.dosage}`, time: padTime(time), date: today.toFormat('yyyy-MM-dd') });
+            }
+            return upcoming;
+        }).sort((a, b) => a.time.localeCompare(b.time));
+        // 2. Missed doses: only today's missed doses, each dose appears only once
+        const missedDoses = eligibleSchedules.flatMap(s => {
+            let missed = [];
+            for (const time of s.times) {
+                const [hour, minute] = time.split(':').map(Number);
+                const doseTime = today.set({ hour, minute, second: 0, millisecond: 0 });
+                if (doseTime >= now) continue;
+                // Only mark as missed if there is NO log for this schedule, date, and time with status Taken, Skipped, or Missed
+                const wasLogged = doseLogs.some(log => {
+                    const logTime = DateTime.fromISO(log.actionTime, { zone: timezone });
+                    // Must match scheduleId, time, and date exactly
+                    return String(log.scheduleId) === String(s._id) &&
+                        padTime(log.time) === padTime(time) &&
+                        logTime.toFormat('yyyy-MM-dd') === today.toFormat('yyyy-MM-dd') &&
+                        ['Taken', 'Skipped', 'Missed'].includes(log.status);
+                });
+                if (wasLogged) continue;
+                missed.push({
+                    scheduleId: s._id,
+                    medicationName: `${s.name} ${s.dosage}`,
+                    time: padTime(time),
+                    date: today.toFormat('yyyy-MM-dd')
+                });
+            }
+            return missed;
+        })
+        .filter((dose, idx, arr) =>
+            arr.findIndex(d => d.scheduleId === dose.scheduleId && d.time === dose.time && d.date === dose.date) === idx
+        )
+        .sort((a, b) => a.time.localeCompare(b.time));
+        // 3. Skipped doses: only today's current schedule times, matching missed logic
+        const skippedDoses = eligibleSchedules.flatMap(s => {
+            let skipped = [];
+            for (const time of s.times) {
+                const [hour, minute] = time.split(':').map(Number);
+                const doseTime = today.set({ hour, minute, second: 0, millisecond: 0 });
+                if (doseTime >= now) continue; // Only if time has passed today
+                // Is there a log for this schedule, time, and today with status Skipped?
+                const log = doseLogs.find(log => {
+                    const logTime = DateTime.fromISO(log.actionTime, { zone: timezone });
+                    return String(log.scheduleId) === String(s._id) &&
+                        padTime(log.time) === padTime(time) &&
+                        log.status === 'Skipped' &&
+                        logTime.toFormat('yyyy-MM-dd') === today.toFormat('yyyy-MM-dd');
+                });
+                if (log) {
+                    skipped.push({
+                        scheduleId: s._id,
+                        medicationName: `${s.name} ${s.dosage}`,
+                        time: padTime(time),
+                        date: today.toFormat('yyyy-MM-dd')
+                    });
+                }
+            }
+            return skipped;
+        })
+        // Remove duplicates (shouldn't be any, but just in case)
+        .filter((dose, idx, arr) =>
+            arr.findIndex(d => d.scheduleId === dose.scheduleId && d.time === dose.time && d.date === dose.date) === idx
+        )
+        .sort((a, b) => a.time.localeCompare(b.time));
 
         // 2. Get Recent Activity (include Missed)
         const recentActivity = doseLogs
@@ -103,23 +129,25 @@ router.get('/summary', protect, async (req, res) => {
             .slice(0, 5);
 
         // 3. Calculate 7-day Adherence (include Missed)
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const weekLogs = doseLogs.filter(log => log.actionTime > sevenDaysAgo && (log.status === 'Taken' || log.status === 'Skipped' || log.status === 'Missed'));
+        const sevenDaysAgo = now.minus({ days: 7 });
+        const weekLogs = doseLogs.filter(log => {
+            const logTime = DateTime.fromISO(log.actionTime, { zone: timezone });
+            return logTime > sevenDaysAgo && ['Taken', 'Skipped', 'Missed'].includes(log.status);
+        });
         const takenInWeek = weekLogs.filter(l => l.status === 'Taken').length;
         const adherenceWeekly = weekLogs.length > 0 ? Math.round((takenInWeek / weekLogs.length) * 100) : 0;
 
         // 4. Calculate Current Streak (increment for each day with at least one 'Taken', break otherwise)
         let currentStreak = 0;
         for (let i = 0; i < 30; i++) {
-            const dayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i, 0, 0, 0, 0);
-            const dayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i, 23, 59, 59, 999);
+            const dayStart = today.minus({ days: i }).startOf('day');
+            const dayEnd = today.minus({ days: i }).endOf('day');
             const logsForDay = doseLogs.filter(log => {
-                const logDate = new Date(log.actionTime);
-                return logDate >= dayStart && logDate <= dayEnd;
+                const logTime = DateTime.fromISO(log.actionTime, { zone: timezone });
+                return logTime >= dayStart && logTime <= dayEnd;
             });
             // Print debug info for every day
-            console.log(`[Streak Debug] LOOP DAY ${i}: dayStart: ${dayStart.toISOString()}, dayEnd: ${dayEnd.toISOString()}`);
+            console.log(`[Streak Debug] LOOP DAY ${i}: dayStart: ${dayStart.toISO()}, dayEnd: ${dayEnd.toISO()}`);
             console.log(`[Streak Debug] LOOP DAY ${i}: logsForDay:`, logsForDay.map(l => ({status: l.status, actionTime: l.actionTime, time: l.time})));
             if (logsForDay.some(log => log.status === 'Taken')) {
                 currentStreak++;

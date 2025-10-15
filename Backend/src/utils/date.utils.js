@@ -1,4 +1,6 @@
-export const calculated__delay = (time, days = 0) => {
+const { DateTime } = require('luxon');
+// Accepts a timezone string (IANA) as third argument
+export const calculated__delay = (time, days = 0, timezone = 'UTC') => {
     if (typeof time !== 'string') return NaN;
     if (!Number.isInteger(days) || days < 0) return NaN;
 
@@ -12,16 +14,14 @@ export const calculated__delay = (time, days = 0) => {
     if (hours < 0 || hours > 23) return NaN;
     if (minutes < 0 || minutes > 59) return NaN;
 
-    const now = new Date();
-    const future = new Date(now);
+    const now = DateTime.now().setZone(timezone);
+    let future = now.plus({ days }).set({ hour: hours, minute: minutes, second: 0, millisecond: 0 });
 
-    future.setDate(future.getDate() + days);
-    future.setHours(hours, minutes, 0, 0);
-
-    if (days === 0 && future.getTime() <= now.getTime()) {
-        future.setDate(future.getDate() + 1);
+    // If today and time has already passed, move to next day
+    if (days === 0 && future <= now) {
+        future = future.plus({ days: 1 });
     }
 
-    return future.getTime() - now.getTime();
+    return future.toMillis() - now.toMillis();
 }
 //

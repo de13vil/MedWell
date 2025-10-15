@@ -37,6 +37,7 @@ const medicineSchema = new mongoose.Schema({
       enum: ['taken', 'missed', 'snoozed'], // Only allows these values
       required: true
     }
+    // Note: All log creation should use luxon and user's timezone for 'date' field
   }]
 }, {
   timestamps: true

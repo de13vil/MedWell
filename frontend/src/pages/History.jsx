@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { medicineApi } from '../api/medicineApi';
 import { History as HistoryIcon, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { dateUtils } from '../utils/dateUtils';
 
 const HistoryPage = () => {
+    const { user } = useAuth();
+    const userTimezone = user?.timezone || undefined;
     const [logs, setLogs] = useState({});
     const [loading, setLoading] = useState(true);
 
@@ -69,12 +72,12 @@ const HistoryPage = () => {
                                                         )}
                                                         <div>
                                                             <p className="font-bold text-lg text.white">{log.medicationName}</p>
-                                                            <p className="text-base text-purple-200">Scheduled for {dateUtils.formatTime(new Date(log.scheduledTime).toTimeString().slice(0,5))}</p>
+                                                            <p className="text-base text-purple-200">Scheduled for {dateUtils.formatTime(new Date(log.scheduledTime).toTimeString().slice(0,5), userTimezone)}</p>
                                                         </div>
                                                     </div>
                                                     <div className="text-right">
                                                         <p className={`font-bold text-base ${log.status === 'Taken' ? 'text-green-300' : log.status === 'Missed' ? 'text-yellow-300' : 'text-red-300'}`}>{log.status}</p>
-                                                        <p className="text-xs text-purple-200 font-mono mt-1">{new Date(log.actionTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                                                        <p className="text-xs text-purple-200 font-mono mt-1">{dateUtils.formatTime(log.actionTime, userTimezone)}</p>
                                                     </div>
                                                 </div>
                                             ))}

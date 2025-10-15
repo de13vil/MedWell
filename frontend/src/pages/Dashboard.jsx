@@ -12,6 +12,7 @@ import { notificationService } from '../services/notificationService';
 
 const DashboardPage = () => {
     const { user } = useAuth();
+    const userTimezone = user?.timezone || undefined;
     const navigate = useNavigate();
     const [summary, setSummary] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -105,26 +106,7 @@ const DashboardPage = () => {
             return;
         }
 
-        // Update UI authoritatively using the server response
-        setSummary(prev => {
-            if (!prev) return prev;
-            // remove from upcoming in authoritative state as well
-            const newUpcoming = (prev.upcomingDoses || []).filter(u => doseKey(u) !== doseKey(dose));
-            // prepend to recentActivity (use createdLog from server), but only if not already present for today
-            const newRecent = [createdLog, ...(prev.recentActivity || [])]
-                .filter((log, idx, arr) =>
-                    arr.findIndex(l => l.scheduleId === log.scheduleId && l.time === log.time && new Date(l.actionTime).toDateString() === new Date(log.actionTime).toDateString()) === idx
-                )
-                .slice(0, 5);
-            const newKpis = { ...(prev.kpis || {}) };
-            if (typeof newKpis.upcomingToday === 'number') {
-                newKpis.upcomingToday = Math.max(0, newKpis.upcomingToday - 1);
-            }
-            return { ...prev, upcomingDoses: newUpcoming, recentActivity: newRecent, kpis: newKpis };
-        });
-
-        console.debug('UI updated, re-syncing with server');
-        // Re-sync with server to ensure any other derived values are correct
+        // Always re-fetch from server after any log to ensure all sections are up to date
         fetchData();
     };
 
@@ -164,10 +146,8 @@ const DashboardPage = () => {
         dose => !hiddenUpcoming.includes(doseKey(dose)) && !actedTodayKeys.has(doseKey(dose))
     );
 
-    // Missed and Skipped doses: show all logs with status 'Missed' for today
-    const missedDoses = (doseLogsData || []).filter(
-        l => l.status === 'Missed' && l.actionTime && new Date(l.actionTime).toDateString() === new Date().toDateString()
-    );
+    // Missed doses: use backend-calculated missed doses for all past and present scheduled doses
+    const missedDoses = summary?.missedDoses || [];
     const skippedDoses = (doseLogsData || []).filter(
         l => l.status === 'Skipped' && l.actionTime && new Date(l.actionTime).toDateString() === new Date().toDateString()
     );
@@ -252,7 +232,7 @@ const DashboardPage = () => {
                                             <p className="text-sm text-purple-200">{dose.medicationName.split(' ').slice(1).join(' ')}</p>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <p className="font-bold text-xl text-purple-400 mr-4">{dateUtils.formatTime(dose.time)}</p>
+                                            <p className="font-bold text-xl text-purple-400 mr-4">{dateUtils.formatTime(dose.time, userTimezone)}</p>
                                             <button type="button" onClick={(e) => { e.preventDefault(); handleLogDose(dose, 'Skipped'); }} title="Skip Dose" className="p-3 bg-red-500/20 text-red-300 rounded-full hover:bg-red-500/40 hover:scale-110 transition-all"><X size={18}/></button>
                                             <button type="button" onClick={(e) => { e.preventDefault(); handleLogDose(dose, 'Taken'); }} title="Take Dose" className="p-3 bg-green-500/20 text-green-300 rounded-full hover:bg-green-500/40 hover:scale-110 transition-all"><Check size={18}/></button>
                                         </div>
@@ -287,7 +267,7 @@ const DashboardPage = () => {
                                     <li key={`${dose.scheduleId}-${dose.time}`} className="flex items-center justify-between text-base bg-red-900/20 rounded-xl px-4 py-3">
                                         <div>
                                             <span className="font-semibold text-white">{dose.medicationName}</span>
-                                            <span className="ml-3 text-red-400 font-mono">{dateUtils.formatTime(dose.time)}</span>
+                                            <span className="ml-3 text-red-400 font-mono">{dateUtils.formatTime(dose.time, userTimezone)}</span>
                                         </div>
                                         <span className="text-red-400 font-bold">Missed</span>
                                     </li>
@@ -312,7 +292,7 @@ const DashboardPage = () => {
                                     <li key={`${dose.scheduleId}-${dose.time}`} className="flex items-center justify-between text-base bg-pink-900/20 rounded-xl px-4 py-3">
                                         <div>
                                             <span className="font-semibold text-white">{dose.medicationName}</span>
-                                            <span className="ml-3 text-pink-400 font-mono">{dateUtils.formatTime(dose.time)}</span>
+                                            <span className="ml-3 text-pink-400 font-mono">{dateUtils.formatTime(dose.time, userTimezone)}</span>
                                         </div>
                                         <span className="text-pink-400 font-bold">Skipped</span>
                                     </li>

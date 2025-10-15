@@ -18,6 +18,7 @@ const doseLogSchema = new mongoose.Schema({
     scheduledTime: {
         type: Date,
         required: true,
+        // Always set using luxon and user's timezone
     },
     // original schedule time string e.g. '08:30' to help match scheduled dose entries
     time: {
@@ -26,6 +27,7 @@ const doseLogSchema = new mongoose.Schema({
     actionTime: {
         type: Date,
         required: true,
+        // Always set using luxon and user's timezone
     },
     status: {
         type: String,

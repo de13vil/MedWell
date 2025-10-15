@@ -18,10 +18,12 @@ const scheduleSchema = new mongoose.Schema({
   times: [{
     type: String, // Stored as "HH:mm"
     required: true
+    // Always interpret as user's timezone
   }],
   startDate: {
     type: Date,
     required: true,
+    // Always set using luxon and user's timezone
   },
   isActive: {
     type: Boolean,

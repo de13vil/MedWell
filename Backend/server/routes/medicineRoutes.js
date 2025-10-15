@@ -83,14 +83,15 @@ router.post('/:id/log', protect, async (req, res) => {
         // The frontend will send a 'status' in the request body
         const { status } = req.body;
         const medicine = await Medicine.findById(req.params.id);
+        const { DateTime } = require('luxon');
+        const timezone = req.user?.timezone || 'UTC';
 
         // Security check: Make sure the medicine exists and belongs to the user
         if (medicine && medicine.user.toString() === req.user._id.toString()) {
-            
-            // Create the new history entry
+            // Create the new history entry (timezone-aware)
             const logEntry = {
                 status: status,
-                date: new Date()
+                date: DateTime.now().setZone(timezone).toJSDate()
             };
 
             // Add the new log to the beginning of the history array

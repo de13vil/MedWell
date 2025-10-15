@@ -21,12 +21,30 @@ const AnalyticsPage = () => {
                     const totalLogs = totalTaken + totalMissed + totalSkipped;
                     const overallAdherence = totalLogs > 0 ? Math.round((totalTaken / totalLogs) * 100) : 0;
 
-                    const weeklyAdherence = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, dayIndex) => {
-                        const dayLogs = doseLogs.filter(d => new Date(d.actionTime).getDay() === dayIndex);
+                    // Build last 7 days (today and previous 6 days)
+                    const today = new Date();
+                    const last7Days = Array.from({length: 7}, (_, i) => {
+                        const d = new Date(today);
+                        d.setDate(today.getDate() - (6 - i));
+                        return d;
+                    });
+                    const weeklyAdherence = last7Days.map((dateObj) => {
+                        const dayName = dateObj.toLocaleDateString(undefined, { weekday: 'short' });
+                        const dateStr = dateObj.toISOString().slice(0,10);
+                        const dayLogs = doseLogs.filter(d => d.actionTime && new Date(d.actionTime).toISOString().slice(0,10) === dateStr);
                         const takenCount = dayLogs.filter(d => d.status === 'Taken').length;
-                        const totalCount = dayLogs.filter(d => ['Taken','Skipped','Missed'].includes(d.status)).length;
-                        if (totalCount === 0) return { name: day, adherence: 0 };
-                        return { name: day, adherence: Math.round((takenCount / totalCount) * 100) };
+                        const missedCount = dayLogs.filter(d => d.status === 'Missed').length;
+                        const skippedCount = dayLogs.filter(d => d.status === 'Skipped').length;
+                        const totalCount = takenCount + missedCount + skippedCount;
+                        const adherence = totalCount === 0 ? 0 : Math.round((takenCount / totalCount) * 100);
+                        return {
+                            name: `${dayName} (${dateObj.getMonth()+1}/${dateObj.getDate()})`,
+                            adherence,
+                            takenCount,
+                            missedCount,
+                            skippedCount,
+                            date: dateStr
+                        };
                     });
 
                     // Missed Doses (today only)
@@ -122,6 +140,50 @@ const AnalyticsPage = () => {
                                 {/* Charts Section - Full Width, Stacked */}
                                 <div className="flex flex-col gap-10 w-full">
                                     <AdherenceChart data={analyticsData.weeklyAdherence} />
+                                    {/* Manual Table for Last 7 Days Adherence */}
+                                    <div className="bg-gray-900/80 rounded-2xl p-6 mt-6 shadow-lg border border-gray-700">
+                                        <h4 className="text-xl font-bold text-white mb-4 text-center">Adherence Data (Last 7 Days)</h4>
+                                        <div className="overflow-x-auto">
+                                            <table className="min-w-full text-center text-white">
+                                                <thead>
+                                                    <tr className="border-b border-gray-700">
+                                                        <th className="px-4 py-2">Day</th>
+                                                        <th className="px-4 py-2">Adherence (%)</th>
+                                                        <th className="px-4 py-2">Taken</th>
+                                                        <th className="px-4 py-2">Missed</th>
+                                                        <th className="px-4 py-2">Skipped</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {analyticsData.weeklyAdherence.map((row, idx, arr) => {
+                                                        // Color code adherence
+                                                        let color = 'text-gray-200';
+                                                        if (row.adherence >= 90) color = 'text-green-400 font-bold';
+                                                        else if (row.adherence >= 70) color = 'text-yellow-400 font-bold';
+                                                        else if (row.adherence > 0) color = 'text-red-400 font-bold';
+                                                        // Tooltip for details
+                                                        const tooltip = `Taken: ${row.takenCount}\nMissed: ${row.missedCount}\nSkipped: ${row.skippedCount}`;
+                                                        return (
+                                                            <tr key={row.name} className="border-b border-gray-800 hover:bg-gray-800/60" title={tooltip}>
+                                                                <td className="px-4 py-2 font-semibold">{row.name}</td>
+                                                                <td className={`px-4 py-2 ${color}`}>{row.adherence}%</td>
+                                                                <td className="px-4 py-2">{row.takenCount}</td>
+                                                                <td className="px-4 py-2">{row.missedCount}</td>
+                                                                <td className="px-4 py-2">{row.skippedCount}</td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                    {/* Weekly average row */}
+                                                    <tr className="border-t border-gray-700 bg-gray-800/60">
+                                                        <td className="px-4 py-2 font-bold text-right">Weekly Avg</td>
+                                                        <td className="px-4 py-2 font-bold text-blue-300" colSpan={4}>
+                                                            {Math.round(analyticsData.weeklyAdherence.reduce((sum, r) => sum + r.adherence, 0) / analyticsData.weeklyAdherence.length)}%
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                 </div>
             </div>

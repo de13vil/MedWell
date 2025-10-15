@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ianaTimezones } from '../utils/ianaTimezones';
 import { useAuth } from '../context/AuthContext.jsx';
 import { authApi } from '../api/authApi.js';
 import { googleCalendarApi } from '../services/googleCalendarApi.js';
@@ -57,7 +58,7 @@ const SettingsPage = () => {
                         animate={{ opacity: 1, scale: 1 }}
                         whileHover={{ scale: 1.025, y: -6 }}
                         transition={{ delay: 0.2, duration: 0.7, type: 'spring', stiffness: 180 }}
-                        className="relative rounded-3xl shadow-2xl glass-card border border-transparent p-10 flex flex-col items-center overflow-hidden transition-all"
+                        className="rounded-3xl shadow-xl border border-indigo-900/40 bg-gradient-to-br from-[#232042]/80 via-[#312e81]/70 to-[#4f378b]/80 backdrop-blur-lg p-10 flex flex-col items-center relative overflow-hidden"
                     >
                         <div className="absolute inset-0 rounded-3xl pointer-events-none neon-border" />
                         <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-tr from-purple-600 to-pink-500 opacity-10 blur-3xl pointer-events-none z-0" />
@@ -241,13 +242,8 @@ const ProfileCard = () => {
         setSaving(true);
         setMessage('');
         try {
-            const payload = {
-                name: form.name,
-                mobile: form.mobile,
-                place: form.place,
-                timezone: form.timezone,
-                notifications: form.notifications,
-            };
+            // Send all fields from the form to the backend
+            const payload = { ...form };
             const updated = await authApi.updateProfile(payload);
             // If a new photo was selected, upload it now
             if (selectedPhotoFile) {
@@ -434,7 +430,18 @@ const ProfileCard = () => {
                 </div>
                 <div className="md:col-span-2">
                     <label className="block text-sm text-purple-200 mb-2">Timezone</label>
-                    <input name="timezone" value={form.timezone} onChange={onChange} className="w-full px-3 py-2 rounded-lg bg-black/30 text-white border border-white/10" />
+                    <select
+                        name="timezone"
+                        value={form.timezone}
+                        onChange={onChange}
+                        className="w-full px-3 py-2 rounded-lg bg-black/30 text-white border border-white/10"
+                        style={{ maxHeight: '200px', overflowY: 'auto' }}
+                    >
+                        <option value="">Select your timezone</option>
+                        {ianaTimezones.map(tz => (
+                            <option key={tz} value={tz}>{tz}</option>
+                        ))}
+                    </select>
                 </div>
                 <div className="md:col-span-2">
                     <label className="block text-sm text-purple-200 mb-2">Reminders</label>

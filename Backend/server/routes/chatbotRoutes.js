@@ -1,14 +1,17 @@
+
 const express = require('express');
 const router = express.Router();
 const Schedule = require('../models/Schedule');
 const DoseLog = require('../models/DoseLog');
 const { protect } = require('../middleware/authMiddleware');
 const axios = require('axios');
+const { DateTime } = require('luxon');
 
 // GET /api/chatbot/context (No changes here)
 router.get('/context', protect, async (req, res) => {
     try {
         const userId = req.user._id;
+        const userTimezone = req.user.timezone || 'UTC';
         const [schedules, recentLogs] = await Promise.all([
             Schedule.find({ user: userId, isActive: true }).sort({ createdAt: -1 }),
             DoseLog.find({ user: userId }).sort({ actionTime: -1 }).limit(20)
@@ -18,7 +21,9 @@ router.get('/context', protect, async (req, res) => {
                 name: s.name, dosage: s.dosage, times: s.times.join(', '), frequency: s.frequency,
             })),
             recentHistory: recentLogs.map(log => ({
-                name: log.medicationName, status: log.status, loggedAt: new Date(log.actionTime).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' }),
+                name: log.medicationName,
+                status: log.status,
+                loggedAt: DateTime.fromJSDate(log.actionTime).setZone(userTimezone).toLocaleString(DateTime.DATETIME_SHORT),
             }))
         };
         res.json(context);
